@@ -16,8 +16,10 @@ Set TypingSpeed 45ms
 Hide
 Type "export PS1='$ ' ZYGOS_CONFIG=/tmp/zygosdemo/config.yaml ZYGOS_BIN=/tmp/zygos PATH=/tmp:$PATH"
 Enter
+Sleep 400ms
 Type "clear"
 Enter
+Sleep 600ms
 Show
 
 Sleep 800ms
