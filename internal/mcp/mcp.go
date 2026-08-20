@@ -49,10 +49,13 @@ USAGE:
   When moving to a project → pass project="<name>". When commenting → tasks_comment.
   "none" clears a field (assignee, project, cycle, due_date, parent).`
 
-func NewServer(reg *provider.Registry) *server.MCPServer {
+// NewServer builds the MCP server. version is the binary's build version, set
+// via -X main.version at release time; it is what the MCP handshake reports to
+// the client, so it must not be hardcoded here.
+func NewServer(reg *provider.Registry, version string) *server.MCPServer {
 	srv := server.NewMCPServer(
 		"tablero",
-		"0.1.0",
+		version,
 		server.WithToolCapabilities(true),
 		server.WithInstructions(serverInstructions),
 	)
