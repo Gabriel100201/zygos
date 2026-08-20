@@ -158,7 +158,7 @@ func cmdConfigList() {
 		fmt.Println("No providers configured. Run `zygos config add linear` or `zygos config add taiga`.")
 		return
 	}
-	fmt.Printf("Config file: %s\n", config.Path())
+	fmt.Printf("Config file: %s\n", config.DisplayPath())
 	printLegacyPathNotice()
 	fmt.Println()
 	fmt.Printf("%-24s %-8s %s\n", "NAME", "TYPE", "DETAILS")

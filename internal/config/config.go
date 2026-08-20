@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -129,6 +130,21 @@ func UsingLegacyPath() bool {
 func fileExists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
+}
+
+// DisplayPath is Path() with the home directory abbreviated to "~", for output
+// meant to be read rather than consumed. Commands whose output gets piped —
+// `config path` — must keep printing the literal path.
+func DisplayPath() string {
+	path := Path()
+	home, err := os.UserHomeDir()
+	if err != nil || home == "" {
+		return path
+	}
+	if rel, err := filepath.Rel(home, path); err == nil && !strings.HasPrefix(rel, "..") {
+		return filepath.Join("~", rel)
+	}
+	return path
 }
 
 // AddProvider appends a provider or returns an error if the name is already taken.

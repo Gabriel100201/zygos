@@ -311,3 +311,28 @@ func TestZygosConfigWinsOverLegacyEnvVar(t *testing.T) {
 		t.Errorf("Path() = %q, want %q", got, current)
 	}
 }
+
+func TestDisplayPathAbbreviatesHome(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("ZYGOS_CONFIG", "")
+	t.Setenv("TABLERO_CONFIG", "")
+	t.Setenv("HOME", home)
+	t.Setenv("USERPROFILE", home)
+
+	want := filepath.Join("~", ".zygos", "config.yaml")
+	if got := DisplayPath(); got != want {
+		t.Errorf("DisplayPath() = %q, want %q", got, want)
+	}
+}
+
+// A config parked outside the home directory has no "~" to abbreviate to.
+func TestDisplayPathLeavesOutsidePathsAlone(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("USERPROFILE", t.TempDir())
+	outside := filepath.Join(t.TempDir(), "elsewhere.yaml")
+	t.Setenv("ZYGOS_CONFIG", outside)
+
+	if got := DisplayPath(); got != outside {
+		t.Errorf("DisplayPath() = %q, want the literal path %q", got, outside)
+	}
+}
