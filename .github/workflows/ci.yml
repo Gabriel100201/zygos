@@ -76,11 +76,11 @@ jobs:
         run: |
           gh release delete edge --yes 2>/dev/null || true
           gh release create edge \
-            dist/tablero_*_linux_amd64.tar.gz \
-            dist/tablero_*_linux_arm64.tar.gz \
-            dist/tablero_*_darwin_amd64.tar.gz \
-            dist/tablero_*_darwin_arm64.tar.gz \
-            dist/tablero_*_windows_amd64.zip \
+            dist/zygos_*_linux_amd64.tar.gz \
+            dist/zygos_*_linux_arm64.tar.gz \
+            dist/zygos_*_darwin_amd64.tar.gz \
+            dist/zygos_*_darwin_arm64.tar.gz \
+            dist/zygos_*_windows_amd64.zip \
             dist/checksums.txt \
             --prerelease \
             --title "edge (latest main)" \

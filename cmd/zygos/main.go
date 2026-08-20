@@ -5,9 +5,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/Gabriel100201/tablero/internal/config"
-	mcppkg "github.com/Gabriel100201/tablero/internal/mcp"
-	"github.com/Gabriel100201/tablero/internal/provider"
+	"github.com/Gabriel100201/zygos/internal/config"
+	mcppkg "github.com/Gabriel100201/zygos/internal/mcp"
+	"github.com/Gabriel100201/zygos/internal/provider"
 	mcpserver "github.com/mark3labs/mcp-go/server"
 )
 
@@ -25,7 +25,7 @@ func main() {
 	case "config":
 		cmdConfig(os.Args[2:])
 	case "version":
-		fmt.Printf("tablero %s\n", version)
+		fmt.Printf("zygos %s\n", version)
 	case "help", "--help", "-h":
 		printUsage()
 	default:
@@ -62,22 +62,22 @@ func cmdMCP() {
 }
 
 func printUsage() {
-	fmt.Println(`tablero — Unified task aggregator for Linear, Taiga & OpenProject (MCP server)
+	fmt.Println(`zygos — Unified task aggregator for Linear, Taiga & OpenProject (MCP server)
 
 USAGE
-  tablero mcp                 Start the MCP server (stdio transport)
-  tablero config <subcommand> Manage providers (add / list / remove / test / path / init)
-  tablero version             Print version
-  tablero help                Show this help
+  zygos mcp                 Start the MCP server (stdio transport)
+  zygos config <subcommand> Manage providers (add / list / remove / test / path / init)
+  zygos version             Print version
+  zygos help                Show this help
 
 QUICK START
-  tablero config add linear      Interactive prompt to add a Linear workspace
-  tablero config add taiga       Interactive prompt to add a Taiga instance
-  tablero config add openproject Interactive prompt to add an OpenProject instance
-  tablero config test         Verify every configured provider responds
-  tablero mcp                 Launch the MCP server for your AI agent
+  zygos config add linear      Interactive prompt to add a Linear workspace
+  zygos config add taiga       Interactive prompt to add a Taiga instance
+  zygos config add openproject Interactive prompt to add an OpenProject instance
+  zygos config test         Verify every configured provider responds
+  zygos mcp                 Launch the MCP server for your AI agent
 
 CONFIG
-  Path: $TABLERO_CONFIG or ~/.tablero/config.yaml
+  Path: $ZYGOS_CONFIG or ~/.zygos/config.yaml
   The file stores API keys / passwords, so it is written with mode 0600.`)
 }

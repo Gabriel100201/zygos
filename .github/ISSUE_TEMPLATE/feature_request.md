@@ -8,7 +8,7 @@ labels: ["enhancement"]
 ## The problem
 
 <!--
-What are you trying to do that Tablero doesn't let you do today?
+What are you trying to do that Zygos doesn't let you do today?
 Describe the use case, not the implementation.
 
 Good: "I want to see all issues assigned to a teammate, not just myself."
@@ -17,7 +17,7 @@ Not as good: "Add a `user` parameter to tasks_list."
 
 ## Proposed solution
 
-<!-- How would you like Tablero to behave? A tool signature, CLI command, or concrete example works great. -->
+<!-- How would you like Zygos to behave? A tool signature, CLI command, or concrete example works great. -->
 
 ```
 <!-- Sketch of the new tool call or CLI invocation -->
@@ -29,7 +29,7 @@ Not as good: "Add a `user` parameter to tasks_list."
 
 ## Scope
 
-<!-- Which part of Tablero does this touch? Pick all that apply. -->
+<!-- Which part of Zygos does this touch? Pick all that apply. -->
 
 - [ ] New MCP tool
 - [ ] Change to an existing MCP tool

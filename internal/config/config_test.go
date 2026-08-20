@@ -12,7 +12,7 @@ import (
 func useTempConfig(t *testing.T) string {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "nested", "config.yaml")
-	t.Setenv("TABLERO_CONFIG", path)
+	t.Setenv("ZYGOS_CONFIG", path)
 	return path
 }
 
@@ -24,12 +24,13 @@ func TestPathPrefersEnvOverride(t *testing.T) {
 }
 
 func TestPathFallsBackToHome(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("ZYGOS_CONFIG", "")
 	t.Setenv("TABLERO_CONFIG", "")
-	home, err := os.UserHomeDir()
-	if err != nil {
-		t.Skip("no home directory in this environment")
-	}
-	want := filepath.Join(home, ".tablero", "config.yaml")
+	t.Setenv("HOME", home)
+	t.Setenv("USERPROFILE", home)
+
+	want := filepath.Join(home, ".zygos", "config.yaml")
 	if got := Path(); got != want {
 		t.Fatalf("Path() = %q, want %q", got, want)
 	}
@@ -219,5 +220,94 @@ func TestLoadRejectsMalformedYAML(t *testing.T) {
 	}
 	if _, err := Load(); err == nil {
 		t.Fatal("malformed YAML should fail to load")
+	}
+}
+
+// The project was called Tablero before v0.3.0. The rename must not strip an
+// existing install of its providers.
+func TestPathFallsBackToLegacyLocation(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("ZYGOS_CONFIG", "")
+	t.Setenv("TABLERO_CONFIG", "")
+	t.Setenv("HOME", home)
+	t.Setenv("USERPROFILE", home) // Windows
+
+	legacy := filepath.Join(home, ".tablero", "config.yaml")
+	if err := os.MkdirAll(filepath.Dir(legacy), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(legacy, []byte("providers: []\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := Path(); got != legacy {
+		t.Errorf("Path() = %q, want the legacy config at %q", got, legacy)
+	}
+	if !UsingLegacyPath() {
+		t.Error("UsingLegacyPath() = false, want true so the CLI can suggest moving it")
+	}
+}
+
+// Once the current location exists it wins, even if the legacy one is still
+// lying around.
+func TestPathPrefersCurrentLocationOverLegacy(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("ZYGOS_CONFIG", "")
+	t.Setenv("TABLERO_CONFIG", "")
+	t.Setenv("HOME", home)
+	t.Setenv("USERPROFILE", home)
+
+	for _, dir := range []string{".tablero", ".zygos"} {
+		path := filepath.Join(home, dir, "config.yaml")
+		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte("providers: []\n"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	want := filepath.Join(home, ".zygos", "config.yaml")
+	if got := Path(); got != want {
+		t.Errorf("Path() = %q, want %q", got, want)
+	}
+	if UsingLegacyPath() {
+		t.Error("UsingLegacyPath() = true even though the current config exists")
+	}
+}
+
+// A brand new install gets the current location, not the legacy one.
+func TestPathDefaultsToCurrentLocation(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("ZYGOS_CONFIG", "")
+	t.Setenv("TABLERO_CONFIG", "")
+	t.Setenv("HOME", home)
+	t.Setenv("USERPROFILE", home)
+
+	want := filepath.Join(home, ".zygos", "config.yaml")
+	if got := Path(); got != want {
+		t.Errorf("Path() = %q, want %q", got, want)
+	}
+}
+
+// The old environment variable keeps working for anyone who scripted it.
+func TestLegacyEnvVarStillResolves(t *testing.T) {
+	t.Setenv("ZYGOS_CONFIG", "")
+	custom := filepath.Join(t.TempDir(), "wherever.yaml")
+	t.Setenv("TABLERO_CONFIG", custom)
+
+	if got := Path(); got != custom {
+		t.Errorf("Path() = %q, want %q", got, custom)
+	}
+}
+
+func TestZygosConfigWinsOverLegacyEnvVar(t *testing.T) {
+	current := filepath.Join(t.TempDir(), "current.yaml")
+	legacy := filepath.Join(t.TempDir(), "legacy.yaml")
+	t.Setenv("ZYGOS_CONFIG", current)
+	t.Setenv("TABLERO_CONFIG", legacy)
+
+	if got := Path(); got != current {
+		t.Errorf("Path() = %q, want %q", got, current)
 	}
 }

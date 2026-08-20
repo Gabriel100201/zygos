@@ -1,12 +1,12 @@
 package mcp
 
 import (
-	"github.com/Gabriel100201/tablero/internal/provider"
+	"github.com/Gabriel100201/zygos/internal/provider"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 )
 
-const serverInstructions = `Tablero is a unified task aggregator across Linear, Taiga and OpenProject.
+const serverInstructions = `Zygos is a unified task aggregator across Linear, Taiga and OpenProject.
 
 TOOLS:
   tasks_list     — list open tasks across all providers (filter by provider/project/state/assigned)
@@ -54,7 +54,7 @@ USAGE:
 // the client, so it must not be hardcoded here.
 func NewServer(reg *provider.Registry, version string) *server.MCPServer {
 	srv := server.NewMCPServer(
-		"tablero",
+		"zygos",
 		version,
 		server.WithToolCapabilities(true),
 		server.WithInstructions(serverInstructions),

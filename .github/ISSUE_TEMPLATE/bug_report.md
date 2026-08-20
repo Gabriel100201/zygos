@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Something in Tablero is broken or behaves differently from what's documented
+about: Something in Zygos is broken or behaves differently from what's documented
 title: "bug: <one-line summary>"
 labels: ["bug"]
 ---
@@ -29,7 +29,7 @@ labels: ["bug"]
 
 ## Environment
 
-- **Tablero version:** <!-- `tablero version` -->
+- **Zygos version:** <!-- `zygos version` -->
 - **OS + arch:** <!-- e.g. macOS 15.2 arm64, Ubuntu 24.04 amd64, Windows 11 amd64 -->
 - **Install method:** <!-- release binary / `go install` / built from source -->
 - **MCP client:** <!-- Claude Code X.Y.Z / Cursor / OpenCode / ... -->

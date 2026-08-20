@@ -1,4 +1,4 @@
-module github.com/Gabriel100201/tablero
+module github.com/Gabriel100201/zygos
 
 go 1.25.0
 

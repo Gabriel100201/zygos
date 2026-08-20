@@ -1,5 +1,5 @@
-# Tablero configuration — copy to ~/.tablero/config.yaml (or set TABLERO_CONFIG)
-# and fill in your credentials. Or run `tablero config add <type>` to do it interactively.
+# Zygos configuration — copy to ~/.zygos/config.yaml (or set ZYGOS_CONFIG)
+# and fill in your credentials. Or run `zygos config add <type>` to do it interactively.
 #
 # You can connect as many providers as you want. Each one needs a unique `name`.
 # The name is an arbitrary label (e.g. "work", "personal", "acme-linear").

@@ -1,14 +1,14 @@
 version: 2
-project_name: tablero
+project_name: zygos
 
 before:
   hooks:
     - go mod tidy
 
 builds:
-  - id: tablero
-    main: ./cmd/tablero
-    binary: tablero
+  - id: zygos
+    main: ./cmd/zygos
+    binary: zygos
     env:
       - CGO_ENABLED=0
     goos:
@@ -27,9 +27,9 @@ builds:
       - -X main.version={{.Version}}
 
 archives:
-  - id: tablero
+  - id: zygos
     ids:
-      - tablero
+      - zygos
     formats: [tar.gz]
     name_template: >-
       {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
@@ -66,16 +66,16 @@ release:
   prerelease: auto
   name_template: "{{.ProjectName}} v{{.Version}}"
   header: |
-    Tablero **v{{.Version}}** — unified MCP task aggregator for Linear and Taiga.
+    Zygos **v{{.Version}}** — unified MCP task aggregator for Linear and Taiga.
 
     ## Install
 
-    **Pick the archive for your OS / CPU below**, extract it, and put the `tablero` binary on your `PATH`.
+    **Pick the archive for your OS / CPU below**, extract it, and put the `zygos` binary on your `PATH`.
 
     Or, if you have Go installed:
 
     ```bash
-    go install github.com/Gabriel100201/tablero/cmd/tablero@v{{.Version}}
+    go install github.com/Gabriel100201/zygos/cmd/zygos@v{{.Version}}
     ```
   footer: |
     ---

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Gabriel100201/tablero/internal/config"
-	"github.com/Gabriel100201/tablero/internal/provider"
+	"github.com/Gabriel100201/zygos/internal/config"
+	"github.com/Gabriel100201/zygos/internal/provider"
 	"golang.org/x/term"
 )
 
@@ -23,7 +23,7 @@ func cmdConfig(args []string) {
 		cmdConfigInit()
 	case "add":
 		if len(args) < 2 {
-			fmt.Fprintln(os.Stderr, "usage: tablero config add <linear|taiga|openproject>")
+			fmt.Fprintln(os.Stderr, "usage: zygos config add <linear|taiga|openproject>")
 			os.Exit(1)
 		}
 		cmdConfigAdd(args[1])
@@ -31,7 +31,7 @@ func cmdConfig(args []string) {
 		cmdConfigList()
 	case "remove", "rm":
 		if len(args) < 2 {
-			fmt.Fprintln(os.Stderr, "usage: tablero config remove <name>")
+			fmt.Fprintln(os.Stderr, "usage: zygos config remove <name>")
 			os.Exit(1)
 		}
 		cmdConfigRemove(args[1])
@@ -43,6 +43,7 @@ func cmdConfig(args []string) {
 		cmdConfigTest(name)
 	case "path":
 		fmt.Println(config.Path())
+		printLegacyPathNotice()
 	case "help", "--help", "-h":
 		printConfigUsage()
 	default:
@@ -53,21 +54,21 @@ func cmdConfig(args []string) {
 }
 
 func printConfigUsage() {
-	fmt.Println(`tablero config — manage providers in ~/.tablero/config.yaml
+	fmt.Println(`zygos config — manage providers in ~/.zygos/config.yaml
 
 USAGE
-  tablero config init              Create an empty config file (if one doesn't exist)
-  tablero config add linear        Add a Linear workspace (prompts for name + API key)
-  tablero config add taiga         Add a Taiga instance (prompts for URL + credentials)
-  tablero config add openproject   Add an OpenProject instance (prompts for URL + API key)
-  tablero config list              List configured providers (secrets masked)
-  tablero config remove <name>     Remove a provider by name
-  tablero config test [name]       Verify connectivity to all (or a single) provider
-  tablero config path              Print the resolved config file path
-  tablero config help              Show this help
+  zygos config init              Create an empty config file (if one doesn't exist)
+  zygos config add linear        Add a Linear workspace (prompts for name + API key)
+  zygos config add taiga         Add a Taiga instance (prompts for URL + credentials)
+  zygos config add openproject   Add an OpenProject instance (prompts for URL + API key)
+  zygos config list              List configured providers (secrets masked)
+  zygos config remove <name>     Remove a provider by name
+  zygos config test [name]       Verify connectivity to all (or a single) provider
+  zygos config path              Print the resolved config file path
+  zygos config help              Show this help
 
 NOTES
-  The config file is at $TABLERO_CONFIG or ~/.tablero/config.yaml.
+  The config file is at $ZYGOS_CONFIG or ~/.zygos/config.yaml.
   It is saved with mode 0600 (owner read/write only) because it contains secrets.`)
 }
 
@@ -84,7 +85,7 @@ func cmdConfigInit() {
 		fatalf("init: %v", err)
 	}
 	fmt.Printf("Created empty config at %s\n", path)
-	fmt.Println("Next step: run `tablero config add linear` or `tablero config add taiga`.")
+	fmt.Println("Next step: run `zygos config add linear` or `zygos config add taiga`.")
 }
 
 // ─── add ──────────────────────────────────────────────────────────────────────
@@ -154,10 +155,12 @@ func cmdConfigList() {
 		fatalf("list: %v", err)
 	}
 	if len(cfg.Providers) == 0 {
-		fmt.Println("No providers configured. Run `tablero config add linear` or `tablero config add taiga`.")
+		fmt.Println("No providers configured. Run `zygos config add linear` or `zygos config add taiga`.")
 		return
 	}
-	fmt.Printf("Config file: %s\n\n", config.Path())
+	fmt.Printf("Config file: %s\n", config.Path())
+	printLegacyPathNotice()
+	fmt.Println()
 	fmt.Printf("%-24s %-8s %s\n", "NAME", "TYPE", "DETAILS")
 	fmt.Println(strings.Repeat("-", 70))
 	for _, p := range cfg.Providers {
@@ -319,4 +322,15 @@ func maskSecret(s string) string {
 func fatalf(format string, args ...any) {
 	fmt.Fprintf(os.Stderr, format+"\n", args...)
 	os.Exit(1)
+}
+
+// printLegacyPathNotice tells the user their config still lives under the
+// project's previous name. It keeps working, but the path will not be looked up
+// forever, so the move is worth making once.
+func printLegacyPathNotice() {
+	if !config.UsingLegacyPath() {
+		return
+	}
+	fmt.Fprintln(os.Stderr, "\nNote: this config still lives in ~/.tablero, from before the project was renamed to Zygos.")
+	fmt.Fprintln(os.Stderr, "It keeps working as is. To move it: mv ~/.tablero ~/.zygos")
 }

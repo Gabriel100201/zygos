@@ -7,19 +7,19 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Gabriel100201/tablero/internal/config"
+	"github.com/Gabriel100201/zygos/internal/config"
 )
 
 // TestLinearLiveReadOnly smoke-tests every NEW GraphQL query added for the
 // task-actions feature against the real Linear API, WITHOUT mutating anything.
-// It is gated behind TABLERO_LIVE=1 so it never runs in CI. A query is
+// It is gated behind ZYGOS_LIVE=1 so it never runs in CI. A query is
 // considered broken only if the API returns a GraphQL error; "not found"
 // results are fine (they prove the query parsed and executed).
 //
-//	TABLERO_LIVE=1 go test ./internal/provider/ -run TestLinearLiveReadOnly -v
+//	ZYGOS_LIVE=1 go test ./internal/provider/ -run TestLinearLiveReadOnly -v
 func TestLinearLiveReadOnly(t *testing.T) {
-	if os.Getenv("TABLERO_LIVE") != "1" {
-		t.Skip("set TABLERO_LIVE=1 to run live Linear read-only checks")
+	if os.Getenv("ZYGOS_LIVE") != "1" {
+		t.Skip("set ZYGOS_LIVE=1 to run live Linear read-only checks")
 	}
 
 	cfg, err := config.Load()
@@ -91,7 +91,7 @@ func TestLinearLiveReadOnly(t *testing.T) {
 	t.Logf("resolveStateID(%q): ok", sample.Status)
 
 	// 5. resolveLabelIDs — new issueLabels query (unknown name → not-found is fine).
-	_, err = lp.resolveLabelIDs(ctx, []string{"__tablero_nonexistent_label__"})
+	_, err = lp.resolveLabelIDs(ctx, []string{"__zygos_nonexistent_label__"})
 	failIfGraphQLError("resolveLabelIDs", err)
 
 	// 6. resolveCycleID "active" — new team{ activeCycle } query.
@@ -99,6 +99,6 @@ func TestLinearLiveReadOnly(t *testing.T) {
 	failIfGraphQLError("resolveCycleID(active)", err)
 
 	// 7. resolveCycleID by name — new cycles(filter) query (unknown → not-found).
-	_, err = lp.resolveCycleID(ctx, ref.teamID, "__tablero_nonexistent_cycle__")
+	_, err = lp.resolveCycleID(ctx, ref.teamID, "__zygos_nonexistent_cycle__")
 	failIfGraphQLError("resolveCycleID(name)", err)
 }
