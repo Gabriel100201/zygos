@@ -34,7 +34,7 @@ func NewOpenProject(name, baseURL, apiKey string) Provider {
 		name:    name,
 		baseURL: strings.TrimRight(baseURL, "/"),
 		authHdr: "Basic " + cred,
-		client:  &http.Client{},
+		client:  newHTTPClient(),
 	}
 }
 

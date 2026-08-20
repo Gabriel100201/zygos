@@ -54,7 +54,7 @@ func cmdMCP() {
 	}
 
 	reg := provider.NewRegistry(providers)
-	srv := mcppkg.NewServer(reg)
+	srv := mcppkg.NewServer(reg, version)
 
 	if err := mcpserver.ServeStdio(srv); err != nil {
 		log.Fatalf("MCP server error: %v", err)

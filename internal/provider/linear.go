@@ -16,13 +16,18 @@ type linearProvider struct {
 	name   string
 	apiKey string
 	client *http.Client
+
+	// endpoint is the GraphQL URL. It exists so tests can point the provider at
+	// a local server; production always uses linearAPI.
+	endpoint string
 }
 
 func NewLinear(name, apiKey string) Provider {
 	return &linearProvider{
-		name:   name,
-		apiKey: apiKey,
-		client: &http.Client{},
+		name:     name,
+		apiKey:   apiKey,
+		client:   newHTTPClient(),
+		endpoint: linearAPI,
 	}
 }
 
@@ -78,9 +83,9 @@ func (l *linearProvider) ListTasks(ctx context.Context, opts ListOpts) ([]Task, 
 	}`
 
 	var (
-		tasks  []Task
-		after  string
-		pages  int
+		tasks []Task
+		after string
+		pages int
 	)
 	const maxPages = 10 // hard cap: 2500 issues per list call
 	for {
@@ -423,12 +428,87 @@ func (l *linearProvider) SearchTasks(ctx context.Context, query string) ([]Task,
 	return tasks, nil
 }
 
+// linearPageInfo is Linear's cursor-pagination envelope, shared by every
+// paginated query in this file.
+type linearPageInfo struct {
+	HasNextPage bool   `json:"hasNextPage"`
+	EndCursor   string `json:"endCursor"`
+}
+
+type linearTeam struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	Key  string `json:"key"`
+}
+
+// listTeams reads every team, following Linear's cursor pagination.
+func (l *linearProvider) listTeams(ctx context.Context) ([]linearTeam, error) {
+	const query = `query($after: String) {
+		teams(first: 100, after: $after) {
+			pageInfo { hasNextPage endCursor }
+			nodes { id name key }
+		}
+	}`
+
+	var (
+		teams []linearTeam
+		after string
+		pages int
+	)
+	const maxPages = 20 // hard cap: 2000 teams
+	for {
+		vars := map[string]any{}
+		if after != "" {
+			vars["after"] = after
+		}
+
+		var resp struct {
+			Data struct {
+				Teams struct {
+					PageInfo linearPageInfo `json:"pageInfo"`
+					Nodes    []linearTeam   `json:"nodes"`
+				} `json:"teams"`
+			} `json:"data"`
+		}
+		if err := l.graphql(ctx, query, vars, &resp); err != nil {
+			return nil, err
+		}
+		teams = append(teams, resp.Data.Teams.Nodes...)
+
+		pages++
+		if !resp.Data.Teams.PageInfo.HasNextPage || pages >= maxPages {
+			break
+		}
+		after = resp.Data.Teams.PageInfo.EndCursor
+	}
+	return teams, nil
+}
+
 func (l *linearProvider) ListProjects(ctx context.Context) ([]Project, error) {
-	// Two top-level queries keep GraphQL complexity well under Linear's 10k ceiling.
-	// A nested teams.projects(first: 100) explodes to ~60k complexity, which the API rejects.
-	query := `{
-		teams(first: 100) { nodes { id name key } }
-		projects(first: 100) {
+	// Teams and projects are fetched as two separate top-level queries: nesting
+	// teams.projects(first: 100) explodes to ~60k GraphQL complexity, far over
+	// Linear's 10k ceiling. Both connections are cursor-paginated — a bare
+	// first: 100 silently truncated large workspaces.
+	teams, err := l.listTeams(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	projects := make([]Project, 0, len(teams))
+	for _, t := range teams {
+		projects = append(projects, Project{
+			Source:     l.name,
+			SourceType: "linear",
+			ID:         t.ID,
+			Name:       t.Name,
+			Key:        t.Key,
+			Kind:       "team",
+		})
+	}
+
+	const query = `query($after: String) {
+		projects(first: 100, after: $after) {
+			pageInfo { hasNextPage endCursor }
 			nodes {
 				id name description
 				state priority priorityLabel
@@ -440,81 +520,109 @@ func (l *linearProvider) ListProjects(ctx context.Context) ([]Project, error) {
 		}
 	}`
 
-	var resp struct {
-		Data struct {
-			Teams struct {
-				Nodes []struct {
-					ID   string `json:"id"`
-					Name string `json:"name"`
-					Key  string `json:"key"`
-				} `json:"nodes"`
-			} `json:"teams"`
-			Projects struct {
-				Nodes []linearProject `json:"nodes"`
-			} `json:"projects"`
-		} `json:"data"`
-	}
-
-	if err := l.graphql(ctx, query, nil, &resp); err != nil {
-		return nil, err
-	}
-
-	var projects []Project
-	for _, t := range resp.Data.Teams.Nodes {
-		projects = append(projects, Project{
-			Source:     l.name,
-			SourceType: "linear",
-			ID:         t.ID,
-			Name:       t.Name,
-			Key:        t.Key,
-			Kind:       "team",
-		})
-	}
-	for _, p := range resp.Data.Projects.Nodes {
-		parentTeam := ""
-		if len(p.Teams.Nodes) > 0 {
-			parentTeam = p.Teams.Nodes[0].Name
+	var (
+		after string
+		pages int
+	)
+	const maxPages = 20 // hard cap: 2000 projects
+	for {
+		vars := map[string]any{}
+		if after != "" {
+			vars["after"] = after
 		}
-		projects = append(projects, p.toProject(l.name, parentTeam))
+
+		var resp struct {
+			Data struct {
+				Projects struct {
+					PageInfo linearPageInfo  `json:"pageInfo"`
+					Nodes    []linearProject `json:"nodes"`
+				} `json:"projects"`
+			} `json:"data"`
+		}
+		if err := l.graphql(ctx, query, vars, &resp); err != nil {
+			return nil, err
+		}
+
+		for _, p := range resp.Data.Projects.Nodes {
+			parentTeam := ""
+			if len(p.Teams.Nodes) > 0 {
+				parentTeam = p.Teams.Nodes[0].Name
+			}
+			projects = append(projects, p.toProject(l.name, parentTeam))
+		}
+
+		pages++
+		if !resp.Data.Projects.PageInfo.HasNextPage || pages >= maxPages {
+			break
+		}
+		after = resp.Data.Projects.PageInfo.EndCursor
 	}
+
 	return projects, nil
 }
 
 func (l *linearProvider) ListStates(ctx context.Context, projectKey string) ([]State, error) {
-	query := `{ workflowStates { nodes { id name type team { name key } } } }`
-
-	var resp struct {
-		Data struct {
-			WorkflowStates struct {
-				Nodes []struct {
-					ID   string `json:"id"`
-					Name string `json:"name"`
-					Type string `json:"type"`
-					Team struct {
-						Name string `json:"name"`
-						Key  string `json:"key"`
-					} `json:"team"`
-				} `json:"nodes"`
-			} `json:"workflowStates"`
-		} `json:"data"`
-	}
-
-	if err := l.graphql(ctx, query, nil, &resp); err != nil {
-		return nil, err
-	}
-
-	var states []State
-	for _, s := range resp.Data.WorkflowStates.Nodes {
-		if projectKey != "" && !strings.EqualFold(s.Team.Key, projectKey) && !strings.EqualFold(s.Team.Name, projectKey) {
-			continue
+	// Linear defaults connections to 50 nodes when `first` is omitted, so the
+	// unpaginated form of this query hid states on any workspace with more than
+	// a couple of teams.
+	const query = `query($after: String) {
+		workflowStates(first: 250, after: $after) {
+			pageInfo { hasNextPage endCursor }
+			nodes { id name type team { name key } }
 		}
-		states = append(states, State{
-			ID:      s.ID,
-			Name:    s.Name,
-			Type:    s.Type,
-			Project: s.Team.Name,
-		})
+	}`
+
+	var (
+		states []State
+		after  string
+		pages  int
+	)
+	const maxPages = 20 // hard cap: 5000 states
+	for {
+		vars := map[string]any{}
+		if after != "" {
+			vars["after"] = after
+		}
+
+		var resp struct {
+			Data struct {
+				WorkflowStates struct {
+					PageInfo linearPageInfo `json:"pageInfo"`
+					Nodes    []struct {
+						ID   string `json:"id"`
+						Name string `json:"name"`
+						Type string `json:"type"`
+						Team struct {
+							Name string `json:"name"`
+							Key  string `json:"key"`
+						} `json:"team"`
+					} `json:"nodes"`
+				} `json:"workflowStates"`
+			} `json:"data"`
+		}
+		if err := l.graphql(ctx, query, vars, &resp); err != nil {
+			return nil, err
+		}
+
+		for _, s := range resp.Data.WorkflowStates.Nodes {
+			if projectKey != "" && !strings.EqualFold(s.Team.Key, projectKey) && !strings.EqualFold(s.Team.Name, projectKey) {
+				continue
+			}
+			states = append(states, State{
+				ID:      s.ID,
+				Name:    s.Name,
+				Type:    s.Type,
+				Project: s.Team.Name,
+			})
+		}
+
+		pages++
+		if !resp.Data.WorkflowStates.PageInfo.HasNextPage || pages >= maxPages {
+			break
+		}
+		after = resp.Data.WorkflowStates.PageInfo.EndCursor
 	}
+
 	return states, nil
 }
 
@@ -531,7 +639,7 @@ func (l *linearProvider) graphql(ctx context.Context, query string, variables ma
 		return fmt.Errorf("marshaling request: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", linearAPI, bytes.NewReader(data))
+	req, err := http.NewRequestWithContext(ctx, "POST", l.endpoint, bytes.NewReader(data))
 	if err != nil {
 		return err
 	}
@@ -949,12 +1057,12 @@ func (l *linearProvider) ListMembers(ctx context.Context, projectKey string) ([]
 }
 
 type linearIssue struct {
-	ID             string `json:"id"`
-	Identifier     string `json:"identifier"`
-	Title          string `json:"title"`
-	Priority       int    `json:"priority"`
-	PriorityLabel  string `json:"priorityLabel"`
-	State          struct {
+	ID            string `json:"id"`
+	Identifier    string `json:"identifier"`
+	Title         string `json:"title"`
+	Priority      int    `json:"priority"`
+	PriorityLabel string `json:"priorityLabel"`
+	State         struct {
 		Name string `json:"name"`
 		Type string `json:"type"`
 	} `json:"state"`

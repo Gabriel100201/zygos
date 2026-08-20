@@ -205,6 +205,16 @@ var ErrDocsNotSupported = fmt.Errorf("documents are not supported by this provid
 // capability (e.g. Taiga for comments/members in the current version).
 var ErrNotSupported = fmt.Errorf("not supported by this provider")
 
+const (
+	// opTimeout bounds one provider operation. List calls paginate, so a single
+	// operation can be a dozen round trips against a large workspace.
+	opTimeout = 45 * time.Second
+
+	// discoveryTimeout bounds the lazy team-key lookup: routing must not stall
+	// on one slow workspace.
+	discoveryTimeout = 20 * time.Second
+)
+
 // Registry holds all providers and provides aggregate methods.
 type Registry struct {
 	providers   []Provider
@@ -224,7 +234,7 @@ func (r *Registry) buildTeamKeyMap(ctx context.Context) {
 			if p.Type() != "linear" {
 				continue
 			}
-			pctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+			pctx, cancel := context.WithTimeout(ctx, discoveryTimeout)
 			projects, err := p.ListProjects(pctx)
 			cancel()
 			if err != nil {
@@ -244,6 +254,11 @@ func (r *Registry) Providers() []Provider { return r.providers }
 // AllTasks queries all providers concurrently and merges results.
 // Failed providers are reported as warnings, not errors.
 func (r *Registry) AllTasks(ctx context.Context, opts ListOpts) ([]Task, []string, error) {
+	matching := r.matchingProviders(opts.Provider)
+	if len(matching) == 0 {
+		return nil, nil, fmt.Errorf("unknown provider %q", opts.Provider)
+	}
+
 	var (
 		mu       sync.Mutex
 		allTasks []Task
@@ -251,14 +266,11 @@ func (r *Registry) AllTasks(ctx context.Context, opts ListOpts) ([]Task, []strin
 		wg       sync.WaitGroup
 	)
 
-	for _, p := range r.providers {
-		if opts.Provider != "" && !strings.EqualFold(p.Name(), opts.Provider) {
-			continue
-		}
+	for _, p := range matching {
 		wg.Add(1)
 		go func(p Provider) {
 			defer wg.Done()
-			pctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+			pctx, cancel := context.WithTimeout(ctx, opTimeout)
 			defer cancel()
 
 			tasks, err := p.ListTasks(pctx, opts)
@@ -273,7 +285,7 @@ func (r *Registry) AllTasks(ctx context.Context, opts ListOpts) ([]Task, []strin
 	}
 	wg.Wait()
 
-	if len(allTasks) == 0 && len(warnings) == len(r.matchingProviders(opts.Provider)) {
+	if len(allTasks) == 0 && len(warnings) == len(matching) {
 		return nil, warnings, fmt.Errorf("all providers failed")
 	}
 	return allTasks, warnings, nil
@@ -285,7 +297,7 @@ func (r *Registry) GetTask(ctx context.Context, identifier string) (*TaskDetail,
 	if p == nil {
 		return nil, fmt.Errorf("cannot route identifier %q to any provider", identifier)
 	}
-	pctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	pctx, cancel := context.WithTimeout(ctx, opTimeout)
 	defer cancel()
 	return p.GetTask(pctx, localID)
 }
@@ -296,7 +308,7 @@ func (r *Registry) CreateTask(ctx context.Context, input CreateInput) (*Task, er
 	if p == nil {
 		return nil, fmt.Errorf("unknown provider %q", input.Provider)
 	}
-	pctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	pctx, cancel := context.WithTimeout(ctx, opTimeout)
 	defer cancel()
 	return p.CreateTask(pctx, input)
 }
@@ -307,7 +319,7 @@ func (r *Registry) UpdateTask(ctx context.Context, identifier string, input Upda
 	if p == nil {
 		return nil, fmt.Errorf("cannot route identifier %q to any provider", identifier)
 	}
-	pctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	pctx, cancel := context.WithTimeout(ctx, opTimeout)
 	defer cancel()
 	return p.UpdateTask(pctx, localID, input)
 }
@@ -318,7 +330,7 @@ func (r *Registry) AddComment(ctx context.Context, identifier, body string) (*Co
 	if p == nil {
 		return nil, fmt.Errorf("cannot route identifier %q to any provider", identifier)
 	}
-	pctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	pctx, cancel := context.WithTimeout(ctx, opTimeout)
 	defer cancel()
 	return p.AddComment(pctx, localID, body)
 }
@@ -329,7 +341,7 @@ func (r *Registry) ListMembers(ctx context.Context, providerName, projectKey str
 	if p == nil {
 		return nil, fmt.Errorf("unknown provider %q", providerName)
 	}
-	pctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	pctx, cancel := context.WithTimeout(ctx, opTimeout)
 	defer cancel()
 	return p.ListMembers(pctx, projectKey)
 }
@@ -350,7 +362,7 @@ func (r *Registry) SearchTasks(ctx context.Context, query string, providerFilter
 		wg.Add(1)
 		go func(p Provider) {
 			defer wg.Done()
-			pctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+			pctx, cancel := context.WithTimeout(ctx, opTimeout)
 			defer cancel()
 
 			tasks, err := p.SearchTasks(pctx, query)
@@ -383,7 +395,7 @@ func (r *Registry) AllProjects(ctx context.Context, providerFilter string) ([]Pr
 		wg.Add(1)
 		go func(p Provider) {
 			defer wg.Done()
-			pctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+			pctx, cancel := context.WithTimeout(ctx, opTimeout)
 			defer cancel()
 
 			projects, err := p.ListProjects(pctx)
@@ -541,7 +553,7 @@ func (r *Registry) States(ctx context.Context, providerName, projectKey string) 
 	if p == nil {
 		return nil, fmt.Errorf("unknown provider %q", providerName)
 	}
-	pctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	pctx, cancel := context.WithTimeout(ctx, opTimeout)
 	defer cancel()
 	return p.ListStates(pctx, projectKey)
 }

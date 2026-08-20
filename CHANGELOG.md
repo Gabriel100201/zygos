@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Taiga list calls silently returned only the first 30 results.** `tasks_list`,
+  `tasks_projects`, `tasks_states` and a task's comments read a single response
+  from endpoints that Taiga paginates, so an agent reported a partial backlog as
+  if it were complete. All collection reads now follow Taiga's
+  `x-pagination-next` links to the end.
+- **Taiga writes lost their body when the session token expired.** The retry
+  after a 401 replayed the request with an `io.Reader` the first attempt had
+  already drained, sending an empty payload. The body is now buffered and
+  replayed intact.
+- **Linear truncated large workspaces.** `tasks_projects` capped teams and
+  projects at 100 each with no cursor, and `tasks_states` requested no page size
+  at all — so it inherited Linear's default of 50 and hid workflow states, which
+  made `tasks_update` reject valid state names. All three connections are now
+  cursor-paginated.
+- Filtering by a provider name that does not exist reported `all providers
+  failed` instead of naming the unknown provider.
+- The MCP handshake advertised a hardcoded version `0.1.0` regardless of the
+  binary actually running. It now reports the real build version.
+
+### Added
+
+- Rate-limit and transient-failure handling. Every provider now shares an HTTP
+  client that retries `429` responses with exponential backoff, honours
+  `Retry-After`, and retries `5xx` on reads only — replaying a failed write
+  could create the same task twice.
+- Request timeouts on all three provider HTTP clients, which previously had
+  none and relied entirely on the caller's context.
+- A test suite covering config handling and permissions, the retry transport,
+  Taiga and Linear pagination, registry routing and graceful degradation, and
+  the MCP tool contract. CI now runs `go test -race` and a `gofmt` check on
+  every push, alongside the existing build and vet.
+- `SECURITY.md`: reporting process, supported versions, and an explicit threat
+  model for the plaintext credential store.
+
+### Changed
+
+- Per-operation timeouts raised from 10s to 45s. Now that list calls paginate, a
+  single operation can be a dozen round trips against a large workspace.
+
+
 ## [0.2.0] - 2026-07-17
 
 ### Added
