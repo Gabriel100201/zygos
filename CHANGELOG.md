@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-20
+
+### Added
+
+- **Full Linear task actions** ([6d39190](https://github.com/Gabriel100201/zygos/commit/6d39190)). `tasks_update` and `tasks_create` previously handled little more than title, description, priority and a state passed as a raw UUID. They now take `state` **by name** — no more copying UUIDs out of the Linear UI — plus `assignee` (`"me"`, a display name or an email), `project`, `labels`, `due_date`, `estimate`, `cycle` and `parent`, each accepting a human name with a UUID fallback. Passing `"none"` clears a field.
+- `tasks_members`: list the assignable users of a provider, so an agent can discover the names `assignee` expects.
+- `tasks_comment`: post a comment on a task. Comments are read back through `tasks_get`.
+
 ### Changed
 
 - **The project is now called Zygos.** ζυγός is the Greek for *yoke*, the beam
