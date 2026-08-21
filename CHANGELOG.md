@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-08-20
+
+### Fixed
+
+- `go install github.com/Gabriel100201/zygos/cmd/zygos@latest` — the install
+  method the README leads with — produced a binary that reported its version as
+  `dev`, over `zygos version` and over the MCP handshake alike. GoReleaser
+  stamps the version through ldflags, which `go install` does not apply; the
+  binary now falls back to the module version Go embeds in it. Release builds
+  are unaffected: a stamped version still wins.
+
+
 ## [0.3.0] - 2026-08-20
 
 ### Added

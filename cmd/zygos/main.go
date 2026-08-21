@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"runtime/debug"
+	"strings"
 
 	"github.com/Gabriel100201/zygos/internal/config"
 	mcppkg "github.com/Gabriel100201/zygos/internal/mcp"
@@ -11,7 +13,29 @@ import (
 	mcpserver "github.com/mark3labs/mcp-go/server"
 )
 
+// version is stamped by GoReleaser via -X main.version at release time. It must
+// keep a constant initializer: -X cannot write to a variable whose initializer
+// is a function call.
 var version = "dev"
+
+// resolvedVersion is the version the binary reports. Builds produced by
+// `go install <module>@<version>` get no ldflags, so it falls back to the module
+// version Go embeds in the binary — otherwise the documented install path yields
+// a binary that calls itself "dev" and reports that over the MCP handshake.
+func resolvedVersion() string {
+	if version != "dev" {
+		return version
+	}
+	info, ok := debug.ReadBuildInfo()
+	if !ok {
+		return version
+	}
+	// "(devel)" is what a build from a working tree reports; it says less than "dev".
+	if v := info.Main.Version; v != "" && v != "(devel)" {
+		return strings.TrimPrefix(v, "v")
+	}
+	return version
+}
 
 func main() {
 	if len(os.Args) < 2 {
@@ -25,7 +49,7 @@ func main() {
 	case "config":
 		cmdConfig(os.Args[2:])
 	case "version":
-		fmt.Printf("zygos %s\n", version)
+		fmt.Printf("zygos %s\n", resolvedVersion())
 	case "help", "--help", "-h":
 		printUsage()
 	default:
@@ -54,7 +78,7 @@ func cmdMCP() {
 	}
 
 	reg := provider.NewRegistry(providers)
-	srv := mcppkg.NewServer(reg, version)
+	srv := mcppkg.NewServer(reg, resolvedVersion())
 
 	if err := mcpserver.ServeStdio(srv); err != nil {
 		log.Fatalf("MCP server error: %v", err)

@@ -25,7 +25,7 @@ Before cutting a release, make sure:
       go vet ./...
       go build ./...
       go install ./cmd/zygos
-      zygos version   # should print "dev" locally
+      zygos version   # prints the module version Go embeds, e.g. "0.3.0+dirty"
       zygos config test
       ```
 - [ ] `README.md` is consistent with the new behavior (tools list, CLI commands, config shape).
