@@ -1,6 +1,6 @@
-# Contributing to Tablero
+# Contributing to Zygos
 
-Thanks for considering a contribution! This guide covers everything you need to work on Tablero — from your first clone to your first merged PR.
+Thanks for considering a contribution! This guide covers everything you need to work on Zygos — from your first clone to your first merged PR.
 
 ## Table of contents
 
@@ -16,7 +16,7 @@ Thanks for considering a contribution! This guide covers everything you need to 
 
 ## Scope and philosophy
 
-Tablero is a **single-binary MCP server** that aggregates tasks (and Linear documents) across Linear, Taiga and OpenProject. We optimize for:
+Zygos is a **single-binary MCP server** that aggregates tasks (and Linear documents) across Linear, Taiga and OpenProject. We optimize for:
 
 - **Zero runtime dependencies.** No Python sidecar, no database, no Docker.
 - **Friendly first run.** The CLI should prompt a newcomer through setup in under 2 minutes.
@@ -36,17 +36,17 @@ Before opening a big PR, please open an issue to discuss the idea. It saves you 
 ### Clone and build
 
 ```bash
-git clone https://github.com/Gabriel100201/tablero.git
-cd tablero
+git clone https://github.com/Gabriel100201/zygos.git
+cd zygos
 go build ./...
 ```
 
 That builds every package. To produce a local binary:
 
 ```bash
-go install ./cmd/tablero
+go install ./cmd/zygos
 # The binary lands in $(go env GOPATH)/bin
-tablero version  # should print "dev"
+zygos version  # should print "dev"
 ```
 
 ### Run the smoke tests that CI runs
@@ -61,8 +61,8 @@ CI runs these on Linux, macOS, and Windows on every PR.
 ## Project layout
 
 ```
-tablero/
-├── cmd/tablero/            # CLI entry point (main.go) and config CLI (config.go)
+zygos/
+├── cmd/zygos/            # CLI entry point (main.go) and config CLI (config.go)
 ├── internal/
 │   ├── config/             # YAML config loading, validation, CLI-driven mutation
 │   ├── mcp/                # MCP server: tool registration (mcp.go) and handlers (handlers.go)
@@ -73,29 +73,29 @@ tablero/
 ├── .github/workflows/      # CI and release workflows
 ├── .goreleaser.yml         # Cross-platform release build config
 ├── CHANGELOG.md            # User-facing changelog (Keep a Changelog format)
-├── config.example.yaml     # Template users copy to ~/.tablero/config.yaml
+├── config.example.yaml     # Template users copy to ~/.zygos/config.yaml
 └── README.md
 ```
 
-**Rule of thumb:** business logic goes in `internal/provider/`, MCP plumbing goes in `internal/mcp/`, and the CLI is in `cmd/tablero/`. Keep those responsibilities separate.
+**Rule of thumb:** business logic goes in `internal/provider/`, MCP plumbing goes in `internal/mcp/`, and the CLI is in `cmd/zygos/`. Keep those responsibilities separate.
 
 ## Running against real providers
 
-Testing Tablero needs real credentials. Two options:
+Testing Zygos needs real credentials. Two options:
 
-**Option 1 — use your own config.** Point `TABLERO_CONFIG` at a dev-only config file with a test workspace:
+**Option 1 — use your own config.** Point `ZYGOS_CONFIG` at a dev-only config file with a test workspace:
 
 ```bash
-export TABLERO_CONFIG=$HOME/.tablero/dev-config.yaml
-tablero config add linear   # interactive prompt
-tablero config test         # verify connectivity
+export ZYGOS_CONFIG=$HOME/.zygos/dev-config.yaml
+zygos config add linear   # interactive prompt
+zygos config test         # verify connectivity
 ```
 
 **Option 2 — register the local build with your MCP client.** For Claude Code:
 
 ```bash
-# After `go install ./cmd/tablero`
-claude mcp add --transport stdio tablero-dev -- tablero mcp
+# After `go install ./cmd/zygos`
+claude mcp add --transport stdio zygos-dev -- zygos mcp
 ```
 
 Reconnect the MCP server in your client (`/mcp` in Claude Code) to pick up the latest build.
@@ -162,8 +162,8 @@ Remember to update the `serverInstructions` constant in `mcp.go` and the tools t
 To support a third backend (GitHub Issues, Jira, etc.):
 
 1. Create `internal/provider/<name>.go` and implement every method on the `Provider` interface.
-2. Register the provider type in `cmd/tablero/main.go`'s `cmdMCP` function (the `switch pc.Type` block) and in `internal/config/config.go`'s `validate` method.
-3. Add interactive prompts in `cmd/tablero/config.go` (`cmdConfigAdd`).
+2. Register the provider type in `cmd/zygos/main.go`'s `cmdMCP` function (the `switch pc.Type` block) and in `internal/config/config.go`'s `validate` method.
+3. Add interactive prompts in `cmd/zygos/config.go` (`cmdConfigAdd`).
 4. Update the Linear/Taiga identifier format documentation in `README.md`.
 5. Providers that don't support a capability (e.g. Taiga has no documents) should return the appropriate sentinel error (`ErrDocsNotSupported`) and the registry methods will filter those out of aggregated results.
 

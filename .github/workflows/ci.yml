@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   build:
-    name: Build & vet
+    name: Build, vet & test
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -28,11 +28,24 @@ jobs:
       - name: go mod download
         run: go mod download
 
+      - name: gofmt
+        if: runner.os != 'Windows'
+        run: |
+          unformatted=$(gofmt -l ./cmd ./internal)
+          if [ -n "$unformatted" ]; then
+            echo "These files are not gofmt'd:"
+            echo "$unformatted"
+            exit 1
+          fi
+
       - name: go vet
         run: go vet ./...
 
       - name: go build
         run: go build ./...
+
+      - name: go test
+        run: go test -race -cover ./...
 
   publish-edge:
     name: Publish edge release
@@ -63,11 +76,11 @@ jobs:
         run: |
           gh release delete edge --yes 2>/dev/null || true
           gh release create edge \
-            dist/tablero_*_linux_amd64.tar.gz \
-            dist/tablero_*_linux_arm64.tar.gz \
-            dist/tablero_*_darwin_amd64.tar.gz \
-            dist/tablero_*_darwin_arm64.tar.gz \
-            dist/tablero_*_windows_amd64.zip \
+            dist/zygos_*_linux_amd64.tar.gz \
+            dist/zygos_*_linux_arm64.tar.gz \
+            dist/zygos_*_darwin_amd64.tar.gz \
+            dist/zygos_*_darwin_arm64.tar.gz \
+            dist/zygos_*_windows_amd64.zip \
             dist/checksums.txt \
             --prerelease \
             --title "edge (latest main)" \

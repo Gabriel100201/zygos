@@ -30,7 +30,7 @@ func NewTaiga(name, baseURL, username, password string) Provider {
 		baseURL:  strings.TrimRight(baseURL, "/"),
 		username: username,
 		password: password,
-		client:   &http.Client{},
+		client:   newHTTPClient(),
 	}
 }
 
@@ -61,7 +61,7 @@ func (t *taigaProvider) ListTasks(ctx context.Context, opts ListOpts) ([]Task, e
 	// Fetch user stories
 	usURL := fmt.Sprintf("%s/api/v1/userstories?%s", t.baseURL, baseQS)
 	var stories []taigaUserStory
-	if err := t.get(ctx, usURL, &stories); err != nil {
+	if err := t.getAll(ctx, usURL, &stories); err != nil {
 		return nil, fmt.Errorf("listing user stories: %w", err)
 	}
 	for _, s := range stories {
@@ -71,7 +71,7 @@ func (t *taigaProvider) ListTasks(ctx context.Context, opts ListOpts) ([]Task, e
 	// Fetch tasks
 	taskURL := fmt.Sprintf("%s/api/v1/tasks?%s", t.baseURL, baseQS)
 	var tasks []taigaTask
-	if err := t.get(ctx, taskURL, &tasks); err != nil {
+	if err := t.getAll(ctx, taskURL, &tasks); err != nil {
 		return nil, fmt.Errorf("listing tasks: %w", err)
 	}
 	for _, tk := range tasks {
@@ -103,7 +103,7 @@ func (t *taigaProvider) GetTask(ctx context.Context, identifier string) (*TaskDe
 		// Fetch child tasks belonging to this user story (open and closed)
 		tasksURL := fmt.Sprintf("%s/api/v1/tasks?user_story=%d", t.baseURL, id)
 		var childTasks []taigaTask
-		if err := t.get(ctx, tasksURL, &childTasks); err == nil {
+		if err := t.getAll(ctx, tasksURL, &childTasks); err == nil {
 			for _, ct := range childTasks {
 				detail.Subtasks = append(detail.Subtasks, ct.toTask(t.name))
 			}
@@ -310,7 +310,7 @@ func (t *taigaProvider) ListProjects(ctx context.Context) ([]Project, error) {
 		Name string `json:"name"`
 		Slug string `json:"slug"`
 	}
-	if err := t.get(ctx, url, &projects); err != nil {
+	if err := t.getAll(ctx, url, &projects); err != nil {
 		return nil, err
 	}
 
@@ -383,7 +383,7 @@ func (t *taigaProvider) ListStates(ctx context.Context, projectKey string) ([]St
 		Name     string `json:"name"`
 		IsClosed bool   `json:"is_closed"`
 	}
-	if err := t.get(ctx, usURL, &usStatuses); err == nil {
+	if err := t.getAll(ctx, usURL, &usStatuses); err == nil {
 		for _, s := range usStatuses {
 			stype := "started"
 			if s.IsClosed {
@@ -405,7 +405,7 @@ func (t *taigaProvider) ListStates(ctx context.Context, projectKey string) ([]St
 		Name     string `json:"name"`
 		IsClosed bool   `json:"is_closed"`
 	}
-	if err := t.get(ctx, taskURL, &taskStatuses); err == nil {
+	if err := t.getAll(ctx, taskURL, &taskStatuses); err == nil {
 		for _, s := range taskStatuses {
 			stype := "started"
 			if s.IsClosed {
@@ -480,73 +480,140 @@ func (t *taigaProvider) reauth(ctx context.Context) error {
 	return t.authenticate(ctx)
 }
 
-// ─── HTTP helpers ─────────────────────────────────────��───────────────────────
+// ─── HTTP helpers ────────────────────────────────────────────────────────────
+
+// taigaPageSize is the page size requested from paginated Taiga endpoints.
+// Taiga's own default is 30; asking for more cuts the number of round-trips.
+const taigaPageSize = 100
+
+// taigaMaxPages bounds getAll so a misbehaving instance can never spin forever.
+// At taigaPageSize items per page that covers 10k items per collection.
+const taigaMaxPages = 100
 
 func (t *taigaProvider) doRequest(ctx context.Context, method, url string, body any, target any) error {
-	var bodyReader io.Reader
+	_, err := t.doRequestH(ctx, method, url, body, target)
+	return err
+}
+
+// doRequestH performs a request and returns the response headers, which the
+// paginated helpers need in order to follow Taiga's x-pagination-next links.
+//
+// The body is buffered rather than streamed so the 401 retry below can replay
+// it: an io.Reader is drained by the first attempt and replays as empty.
+func (t *taigaProvider) doRequestH(ctx context.Context, method, url string, body any, target any) (http.Header, error) {
+	var payload []byte
 	if body != nil {
-		data, _ := json.Marshal(body)
-		bodyReader = bytes.NewReader(data)
+		var err error
+		payload, err = json.Marshal(body)
+		if err != nil {
+			return nil, fmt.Errorf("encoding Taiga request body: %w", err)
+		}
 	}
 
-	req, err := http.NewRequestWithContext(ctx, method, url, bodyReader)
-	if err != nil {
-		return err
+	newRequest := func(token string) (*http.Request, error) {
+		var r io.Reader
+		if payload != nil {
+			r = bytes.NewReader(payload)
+		}
+		req, err := http.NewRequestWithContext(ctx, method, url, r)
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer "+token)
+		return req, nil
 	}
-	req.Header.Set("Content-Type", "application/json")
 
 	t.mu.Lock()
 	token := t.authToken
 	t.mu.Unlock()
-	req.Header.Set("Authorization", "Bearer "+token)
 
+	req, err := newRequest(token)
+	if err != nil {
+		return nil, err
+	}
 	resp, err := t.client.Do(req)
 	if err != nil {
-		return fmt.Errorf("Taiga request failed (is VPN connected?): %w", err)
+		return nil, fmt.Errorf("Taiga request failed (is VPN connected?): %w", err)
 	}
-	defer resp.Body.Close()
-
 	respBody, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
 
-	// On 401, re-authenticate and retry once
-	if resp.StatusCode == 401 {
+	// On 401 the session token expired: re-authenticate and replay once.
+	if resp.StatusCode == http.StatusUnauthorized {
 		if err := t.reauth(ctx); err != nil {
-			return fmt.Errorf("re-auth failed: %w", err)
+			return nil, fmt.Errorf("re-auth failed: %w", err)
 		}
-		// Retry
-		req2, _ := http.NewRequestWithContext(ctx, method, url, bodyReader)
-		req2.Header.Set("Content-Type", "application/json")
 		t.mu.Lock()
-		req2.Header.Set("Authorization", "Bearer "+t.authToken)
+		token = t.authToken
 		t.mu.Unlock()
 
-		resp2, err := t.client.Do(req2)
+		req, err = newRequest(token)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		defer resp2.Body.Close()
-		respBody, _ = io.ReadAll(resp2.Body)
-		if resp2.StatusCode >= 400 {
-			return fmt.Errorf("Taiga %s %s returned %d: %s", method, url, resp2.StatusCode, string(respBody))
+		resp, err = t.client.Do(req)
+		if err != nil {
+			return nil, fmt.Errorf("Taiga request failed after re-auth: %w", err)
 		}
-		if target != nil {
-			return json.Unmarshal(respBody, target)
-		}
-		return nil
+		respBody, _ = io.ReadAll(resp.Body)
+		resp.Body.Close()
 	}
 
 	if resp.StatusCode >= 400 {
-		return fmt.Errorf("Taiga %s returned %d: %s", method, resp.StatusCode, string(respBody))
+		return resp.Header, fmt.Errorf("Taiga %s %s returned %d: %s", method, url, resp.StatusCode, string(respBody))
 	}
 
 	if target != nil {
-		return json.Unmarshal(respBody, target)
+		if err := json.Unmarshal(respBody, target); err != nil {
+			return resp.Header, fmt.Errorf("decoding Taiga response: %w", err)
+		}
 	}
-	return nil
+	return resp.Header, nil
 }
 
 func (t *taigaProvider) get(ctx context.Context, url string, target any) error {
 	return t.doRequest(ctx, "GET", url, nil, target)
+}
+
+// getAll reads a whole paginated collection into target (a pointer to a slice).
+//
+// Taiga paginates list endpoints at 30 items per page by default and points at
+// the next page with an x-pagination-next header. Reading only the first
+// response — what a plain get does — silently truncates the collection, which
+// is worse than an error: the agent reports a partial list as if it were
+// complete.
+func (t *taigaProvider) getAll(ctx context.Context, url string, target any) error {
+	var all []json.RawMessage
+
+	next := withPageSize(url, taigaPageSize)
+	for page := 0; next != "" && page < taigaMaxPages; page++ {
+		var chunk []json.RawMessage
+		hdr, err := t.doRequestH(ctx, "GET", next, nil, &chunk)
+		if err != nil {
+			return err
+		}
+		all = append(all, chunk...)
+		next = hdr.Get("x-pagination-next")
+	}
+
+	data, err := json.Marshal(all)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(data, target)
+}
+
+// withPageSize appends Taiga's page_size parameter unless the caller set one.
+func withPageSize(rawURL string, size int) string {
+	if strings.Contains(rawURL, "page_size=") {
+		return rawURL
+	}
+	sep := "?"
+	if strings.Contains(rawURL, "?") {
+		sep = "&"
+	}
+	return rawURL + sep + "page_size=" + strconv.Itoa(size)
 }
 
 func (t *taigaProvider) post(ctx context.Context, url string, body any, target any) error {
@@ -580,7 +647,7 @@ func (t *taigaProvider) fetchComments(ctx context.Context, url string) ([]Commen
 			Name string `json:"name"`
 		} `json:"user"`
 	}
-	if err := t.get(ctx, url, &history); err != nil {
+	if err := t.getAll(ctx, url, &history); err != nil {
 		return nil, err
 	}
 
@@ -616,11 +683,11 @@ type taigaUserStory struct {
 	AssignedToExtra *struct {
 		FullName string `json:"full_name_display"`
 	} `json:"assigned_to_extra_info"`
-	Subject     string   `json:"subject"`
-	DueDate     *string  `json:"due_date"`
-	Tags        [][]any  `json:"tags"`
-	CreatedDate string   `json:"created_date"`
-	ModifiedDate string  `json:"modified_date"`
+	Subject       string  `json:"subject"`
+	DueDate       *string `json:"due_date"`
+	Tags          [][]any `json:"tags"`
+	CreatedDate   string  `json:"created_date"`
+	ModifiedDate  string  `json:"modified_date"`
 	MilestoneName *string `json:"milestone_name"`
 }
 

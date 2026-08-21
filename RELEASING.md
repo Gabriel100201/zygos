@@ -1,10 +1,10 @@
-# Releasing Tablero
+# Releasing Zygos
 
 This document describes how to cut a new release. The whole pipeline is automated by GoReleaser — a maintainer only needs to bump the changelog and push a tag.
 
 ## Versioning
 
-Tablero follows [Semantic Versioning 2.0](https://semver.org/):
+Zygos follows [Semantic Versioning 2.0](https://semver.org/):
 
 | Bump | When |
 |------|------|
@@ -24,9 +24,9 @@ Before cutting a release, make sure:
       ```bash
       go vet ./...
       go build ./...
-      go install ./cmd/tablero
-      tablero version   # should print "dev" locally
-      tablero config test
+      go install ./cmd/zygos
+      zygos version   # should print "dev" locally
+      zygos config test
       ```
 - [ ] `README.md` is consistent with the new behavior (tools list, CLI commands, config shape).
 - [ ] No secrets, credentials, or personal data leaked into the diff since the last tag:
@@ -58,12 +58,12 @@ git push origin v0.2.0
 
 Within ~1–2 minutes, GoReleaser will:
 
-1. Build `tablero` for Linux, macOS, and Windows (amd64 + arm64, minus windows/arm64).
+1. Build `zygos` for Linux, macOS, and Windows (amd64 + arm64, minus windows/arm64).
 2. Embed the version string into the binary via `-ldflags "-X main.version={{.Version}}"`.
 3. Pack each binary together with `README.md`, `LICENSE`, `CHANGELOG.md`, and `config.example.yaml` into a `.tar.gz` (or `.zip` on Windows).
 4. Compute SHA-256 checksums and write them to `checksums.txt`.
 5. Draft release notes from the commits between the previous tag and this one, filtered by commit type.
-6. Publish the GitHub Release at `https://github.com/Gabriel100201/tablero/releases/tag/v0.2.0`.
+6. Publish the GitHub Release at `https://github.com/Gabriel100201/zygos/releases/tag/v0.2.0`.
 
 ## Verifying a release
 
@@ -71,11 +71,11 @@ After the workflow finishes:
 
 ```bash
 # Confirm all expected assets are attached
-gh release view v0.2.0 --repo Gabriel100201/tablero
+gh release view v0.2.0 --repo Gabriel100201/zygos
 
 # Download and smoke-test the Linux amd64 build
-curl -sL https://github.com/Gabriel100201/tablero/releases/download/v0.2.0/tablero_0.2.0_linux_amd64.tar.gz | tar -xz
-./tablero version   # should print "0.2.0"
+curl -sL https://github.com/Gabriel100201/zygos/releases/download/v0.2.0/zygos_0.2.0_linux_amd64.tar.gz | tar -xz
+./zygos version   # should print "0.2.0"
 ```
 
 If you're on a different platform, adapt the filename accordingly.
@@ -90,7 +90,7 @@ git tag -d v0.2.0
 git push --delete origin v0.2.0
 
 # Delete the GitHub release (if one was created)
-gh release delete v0.2.0 --repo Gabriel100201/tablero --yes
+gh release delete v0.2.0 --repo Gabriel100201/zygos --yes
 
 # Fix the bug on main, then re-cut the tag
 git tag -a v0.2.0 -m "v0.2.0 — <summary>"

@@ -28,7 +28,7 @@ Keep this template populated in the PR description — it helps reviewers land y
 <!--
 Describe the manual and/or automated testing you did. For example:
 - `go vet ./... && go build ./...` passes
-- Ran `tablero config add linear` locally with a test workspace; credentials validated correctly
+- Ran `zygos config add linear` locally with a test workspace; credentials validated correctly
 - Called `tasks_list project=MOVE assigned=false` via Claude Code, got the expected 22 tasks
 
 If the change is user-facing, please include a concrete example of the before/after behavior.

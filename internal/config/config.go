@@ -4,8 +4,16 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"gopkg.in/yaml.v3"
+)
+
+// Names carried over from the project's previous identity. Kept so an existing
+// install keeps working across the rename.
+const (
+	legacyDir    = ".tablero"
+	legacyEnvVar = "TABLERO_CONFIG"
 )
 
 type Config struct {
@@ -27,7 +35,7 @@ func Load() (*Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, fmt.Errorf("no config found at %s — run `tablero config init` to create one, or `tablero config add linear` to add a provider interactively", path)
+			return nil, fmt.Errorf("no config found at %s — run `zygos config init` to create one, or `zygos config add linear` to add a provider interactively", path)
 		}
 		return nil, fmt.Errorf("reading config: %w", err)
 	}
@@ -83,16 +91,60 @@ func (c *Config) Save() error {
 	return nil
 }
 
-// Path returns the resolved config file path (TABLERO_CONFIG > ~/.tablero/config.yaml).
+// Path returns the resolved config file path.
+//
+// Resolution order: $ZYGOS_CONFIG, then the legacy $TABLERO_CONFIG, then
+// ~/.zygos/config.yaml, then ~/.tablero/config.yaml if that is the only one
+// that exists. The project was called Tablero before v0.3.0 and the rename must
+// not silently strip an existing installation of its providers; a config
+// written by the old binary keeps working where it is until the user moves it.
 func Path() string {
-	if p := os.Getenv("TABLERO_CONFIG"); p != "" {
+	if p := os.Getenv("ZYGOS_CONFIG"); p != "" {
 		return p
 	}
+	if p := os.Getenv(legacyEnvVar); p != "" {
+		return p
+	}
+
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return ".tablero/config.yaml"
+		return filepath.Join(".zygos", "config.yaml")
 	}
-	return filepath.Join(home, ".tablero", "config.yaml")
+
+	current := filepath.Join(home, ".zygos", "config.yaml")
+	if _, err := os.Stat(current); err == nil {
+		return current
+	}
+	if legacy := filepath.Join(home, legacyDir, "config.yaml"); fileExists(legacy) {
+		return legacy
+	}
+	return current
+}
+
+// UsingLegacyPath reports whether the config in use is still the pre-rename
+// one, so the CLI can suggest moving it.
+func UsingLegacyPath() bool {
+	return filepath.Base(filepath.Dir(Path())) == legacyDir
+}
+
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
+}
+
+// DisplayPath is Path() with the home directory abbreviated to "~", for output
+// meant to be read rather than consumed. Commands whose output gets piped —
+// `config path` — must keep printing the literal path.
+func DisplayPath() string {
+	path := Path()
+	home, err := os.UserHomeDir()
+	if err != nil || home == "" {
+		return path
+	}
+	if rel, err := filepath.Rel(home, path); err == nil && !strings.HasPrefix(rel, "..") {
+		return filepath.Join("~", rel)
+	}
+	return path
 }
 
 // AddProvider appends a provider or returns an error if the name is already taken.

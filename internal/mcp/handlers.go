@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Gabriel100201/tablero/internal/provider"
+	"github.com/Gabriel100201/zygos/internal/provider"
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
