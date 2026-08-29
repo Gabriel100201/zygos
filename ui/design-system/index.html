@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Event Horizon — Design System</title>
+<link rel="stylesheet" href="event-horizon.css">
+</head>
+<body>
+
+<!-- SVG icon symbols (lineal minimalista · 1.5px · round) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <g id="i-plus" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></g>
+    <g id="i-filter" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8v6l-4-2v-4z"/></g>
+    <g id="i-lock" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></g>
+    <g id="i-kebab" fill="currentColor" stroke="none"><circle cx="12" cy="6" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="18" r="1.4"/></g>
+    <g id="i-comment" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-5A8 8 0 1 1 21 12z"/></g>
+    <g id="i-calendar" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"/><line x1="4" y1="9" x2="20" y2="9"/><line x1="9" y1="3" x2="9" y2="6"/><line x1="15" y1="3" x2="15" y2="6"/></g>
+    <g id="i-check" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></g>
+    <g id="i-chev-left" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></g>
+    <g id="i-home" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7"/><path d="M6 10v9h12v-9"/></g>
+    <g id="i-checksquare" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><polyline points="8.5 12 11 14.5 15.5 9.5"/></g>
+    <g id="i-folder" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7a2 2 0 0 1 2-2h3l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/></g>
+    <g id="i-layers" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 3 21 8 12 13 3 8"/><polyline points="3 13 12 18 21 13"/></g>
+    <g id="i-orbit" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><line x1="7" y1="17" x2="17" y2="7"/></g>
+    <g id="i-trend" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 16 9 11 13 14 20 6"/><polyline points="15 6 20 6 20 11"/></g>
+    <g id="i-users" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><path d="M16 7a3 3 0 0 1 0 6"/><path d="M17.5 14.5a5.5 5.5 0 0 1 3 5"/></g>
+    <g id="i-settings" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></g>
+    <g id="i-search" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><line x1="20" y1="20" x2="15.5" y2="15.5"/></g>
+    <g id="i-bell" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6z"/><path d="M10 20a2 2 0 0 0 4 0"/></g>
+    <g id="i-nav" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 3 19 21 12 17 5 21"/></g>
+    <g id="i-plus-circle" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><line x1="12" y1="8.5" x2="12" y2="15.5"/><line x1="8.5" y1="12" x2="15.5" y2="12"/></g>
+    <g id="i-cursor" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l14 6-6 2-2 6z"/></g>
+    <g id="i-clock" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><polyline points="12 7.5 12 12 15 14"/></g>
+    <g id="i-tasks" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="9" y1="7" x2="20" y2="7"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="17" x2="20" y2="17"/><polyline points="4 7 5 8 6.5 6"/><polyline points="4 12 5 13 6.5 11"/><circle cx="5" cy="17" r="0.6" fill="currentColor"/></g>
+  </defs>
+</svg>
+
+<main class="kit">
+
+  <!-- ============== SIDEBAR ============== -->
+  <aside class="sidebar">
+    <div class="brand-eclipse">
+      <span class="streak"></span>
+      <span class="corona"></span>
+      <span class="disc"></span>
+    </div>
+
+    <h1 class="brand-title">EVENT HORIZON</h1>
+    <p class="brand-sub">Design System</p>
+    <p class="brand-desc">Sistema de diseño para una aplicación de gestión de tareas. Inspirado en la gravedad, el foco y la simplicidad del espacio profundo.</p>
+
+    <!-- COLORES -->
+    <section class="sidebar-block">
+      <p class="eyebrow">Colores</p>
+      <div class="color-list" id="colorList">
+        <div class="color-row" data-hex="#0A0A0D"><span class="swatch" style="background:#0A0A0D"></span><span class="color-name">Void</span><span class="color-hex">#0A0A0D</span></div>
+        <div class="color-row" data-hex="#0F1116"><span class="swatch" style="background:#0F1116"></span><span class="color-name">Deep Space</span><span class="color-hex">#0F1116</span></div>
+        <div class="color-row" data-hex="#14171D"><span class="swatch" style="background:#14171D"></span><span class="color-name">Surface</span><span class="color-hex">#14171D</span></div>
+        <div class="color-row" data-hex="#1B1F28"><span class="swatch" style="background:#1B1F28"></span><span class="color-name">Elevated</span><span class="color-hex">#1B1F28</span></div>
+        <div class="color-row" data-hex="#E6E8EE"><span class="swatch" style="background:#E6E8EE"></span><span class="color-name">Text Primary</span><span class="color-hex">#E6E8EE</span></div>
+        <div class="color-row" data-hex="#A1A7B3"><span class="swatch" style="background:#A1A7B3"></span><span class="color-name">Text Secondary</span><span class="color-hex">#A1A7B3</span></div>
+        <div class="color-row" data-hex="#6B7280"><span class="swatch" style="background:#6B7280"></span><span class="color-name">Text Muted</span><span class="color-hex">#6B7280</span></div>
+        <div class="color-row" data-hex="#FFB84D"><span class="swatch" style="background:#FFB84D"></span><span class="color-name">Accent</span><span class="color-hex">#FFB84D</span></div>
+        <div class="color-row" data-hex="#FFC67A"><span class="swatch" style="background:#FFC67A"></span><span class="color-name">Accent Soft</span><span class="color-hex">#FFC67A</span></div>
+        <div class="color-row" data-hex="#22C55E"><span class="swatch" style="background:#22C55E"></span><span class="color-name">Success</span><span class="color-hex">#22C55E</span></div>
+        <div class="color-row" data-hex="#F59E0B"><span class="swatch" style="background:#F59E0B"></span><span class="color-name">Warning</span><span class="color-hex">#F59E0B</span></div>
+        <div class="color-row" data-hex="#EF4444"><span class="swatch" style="background:#EF4444"></span><span class="color-name">Error</span><span class="color-hex">#EF4444</span></div>
+        <div class="color-row" data-hex="#3B82F6"><span class="swatch" style="background:#3B82F6"></span><span class="color-name">Info</span><span class="color-hex">#3B82F6</span></div>
+      </div>
+    </section>
+
+    <div class="divider-line"></div>
+
+    <!-- GRADIENTES -->
+    <section class="sidebar-block">
+      <p class="eyebrow">Gradientes</p>
+      <div class="grad-list">
+        <div class="grad-chip accretion">Accretion Disc</div>
+        <div class="grad-chip horizon">Event Horizon</div>
+        <div class="grad-chip nebula">Nebula</div>
+      </div>
+    </section>
+
+    <div class="divider-line"></div>
+
+    <!-- ICONOGRAFÍA -->
+    <section class="sidebar-block">
+      <p class="eyebrow">Iconografía</p>
+      <div class="icon-grid">
+        <span class="icon-cell"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-home"/></svg></span>
+        <span class="icon-cell"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-checksquare"/></svg></span>
+        <span class="icon-cell"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-folder"/></svg></span>
+        <span class="icon-cell"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-calendar"/></svg></span>
+        <span class="icon-cell"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-layers"/></svg></span>
+        <span class="icon-cell"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-orbit"/></svg></span>
+        <span class="icon-cell"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-trend"/></svg></span>
+        <span class="icon-cell"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-users"/></svg></span>
+        <span class="icon-cell"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-settings"/></svg></span>
+        <span class="icon-cell"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-nav"/></svg></span>
+        <span class="icon-cell"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-bell"/></svg></span>
+        <span class="icon-cell"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-search"/></svg></span>
+        <span class="icon-cell"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-plus-circle"/></svg></span>
+        <span class="icon-cell"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-cursor"/></svg></span>
+      </div>
+      <div class="icon-note">
+        <p>Estilo: Lineal minimalista</p>
+        <p>Trazos: 1.5px · Cap: Round · Join: Round</p>
+      </div>
+    </section>
+  </aside>
+
+  <!-- ============== MAIN ============== -->
+  <div class="main">
+
+    <!-- ROW: Typography | Spacing+Radii -->
+    <div class="row split cols-type divide-x">
+      <!-- Typography -->
+      <div class="col-pad">
+        <p class="eyebrow">Tipografía</p>
+        <div class="type-grid">
+          <div>
+            <p class="type-aa">Aa</p>
+            <p class="type-face-name">General Sans</p>
+            <p class="type-face-sub">Tipografía principal · alt. de Satoshi</p>
+          </div>
+          <div class="type-scale">
+            <div class="type-line"><span class="type-label">Display</span><span class="type-weight">700</span><span class="type-sample ts-display">AaBbCc</span></div>
+            <div class="type-line"><span class="type-label">Heading 1</span><span class="type-weight">300</span><span class="type-sample ts-h1">AaBbCc</span></div>
+            <div class="type-line"><span class="type-label">Heading 2</span><span class="type-weight">600</span><span class="type-sample ts-h2">AaBbCc</span></div>
+            <div class="type-line"><span class="type-label">Body 1</span><span class="type-weight">400</span><span class="type-sample ts-b1">AaBbCc</span></div>
+            <div class="type-line"><span class="type-label">Body 2</span><span class="type-weight">400</span><span class="type-sample ts-b2">AaBbCc</span></div>
+            <div class="type-line"><span class="type-label">Caption</span><span class="type-weight">400</span><span class="type-sample ts-cap">AaBbCc</span></div>
+          </div>
+        </div>
+      </div>
+      <!-- Spacing + radii -->
+      <div class="col-pad">
+        <p class="eyebrow">Espaciado</p>
+        <div class="spacing-row" id="spacingRow"></div>
+        <div class="divider-line"></div>
+        <p class="eyebrow">Radios</p>
+        <div class="radii-row" id="radiiRow"></div>
+      </div>
+    </div>
+
+    <!-- ROW: Borders | Shadows -->
+    <div class="row split cols-2 divide-x">
+      <div class="col-pad">
+        <p class="eyebrow">Bordes</p>
+        <div class="border-demo">
+          <div class="border-line-wrap"><span class="border-meta">1px</span><span class="border-line"></span></div>
+          <span class="border-meta">Color: rgba(255,255,255,0.06)</span>
+        </div>
+      </div>
+      <div class="col-pad">
+        <p class="eyebrow">Sombras</p>
+        <div class="shadow-row">
+          <div class="shadow-item"><div class="shadow-box sm"></div><div class="shadow-meta"><b>SM</b>0 1px 2px<br>rgba(0,0,0,0.4)</div></div>
+          <div class="shadow-item"><div class="shadow-box md"></div><div class="shadow-meta"><b>MD</b>0 4px 12px<br>rgba(0,0,0,0.45)</div></div>
+          <div class="shadow-item"><div class="shadow-box lg"></div><div class="shadow-meta"><b>LG</b>0 12px 30px<br>rgba(0,0,0,0.6)</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COMPONENTES banner -->
+    <div class="components-banner">
+      <p class="eyebrow">Componentes</p>
+    </div>
+
+    <!-- ROW: Buttons | Inputs | Checkbox&Radio -->
+    <div class="row split cols-comp divide-x">
+      <!-- Buttons -->
+      <div class="col-pad">
+        <p class="eyebrow">Botones</p>
+        <div class="stack">
+          <p class="field-label" style="margin-top:0">Primario</p>
+          <button class="btn btn--primary">Crear tarea <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-plus"/></svg></button>
+          <p class="field-label">Secundario</p>
+          <button class="btn btn--secondary">Ver progreso</button>
+          <p class="field-label">Terciario</p>
+          <button class="btn btn--tertiary">Filtrar <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-filter"/></svg></button>
+          <div style="height:var(--s-16)"></div>
+          <button class="btn btn--ghost">Cancelar</button>
+        </div>
+      </div>
+
+      <!-- Inputs + Checkbox&Radio (two sub-columns) -->
+      <div class="col-pad" style="display:grid;grid-template-columns:1fr 0.85fr;gap:var(--s-32)">
+        <div>
+          <p class="eyebrow">Inputs</p>
+          <div class="stack" style="margin-top:var(--s-24)">
+            <p class="field-label" style="margin-top:0">Default</p>
+            <div class="input-wrap"><input class="input" type="text" placeholder="Escribe algo..."></div>
+            <p class="field-label">Focus</p>
+            <div class="input-wrap"><input class="input is-focus" type="text" placeholder="Escribe algo..."></div>
+            <p class="field-label">Disabled</p>
+            <div class="input-wrap"><input class="input is-disabled" type="text" placeholder="No disponible" disabled><svg class="ico-trailing" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-lock"/></svg></div>
+          </div>
+        </div>
+        <div>
+          <p class="eyebrow">Checkbox &amp; Radio</p>
+          <div class="choice" style="margin-top:var(--s-24)">
+            <label class="choice-row"><input type="checkbox"><span class="cbox"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><use href="#i-check"/></svg></span>Tarea completada</label>
+            <label class="choice-row"><input type="checkbox" checked><span class="cbox"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><use href="#i-check"/></svg></span>Tarea seleccionada</label>
+            <div style="height:var(--s-8)"></div>
+            <label class="choice-row"><input type="radio" name="demo-radio" checked><span class="radio"></span>Opción uno</label>
+            <label class="choice-row"><input type="radio" name="demo-radio"><span class="radio"></span>Opción dos</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW: Cards | Tags | Badges | Progress -->
+    <div class="row split cols-cards divide-x">
+      <!-- Cards -->
+      <div class="col-pad">
+        <p class="eyebrow">Cards</p>
+        <article class="tcard">
+          <div class="tcard-top">
+            <span class="tag tag--trabajo">Trabajo</span>
+            <button class="icon-btn"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-kebab"/></svg></button>
+          </div>
+          <h3 class="tcard-title">Rediseñar flujo de onboarding</h3>
+          <p class="tcard-desc">Actualizar el flujo para mejorar la conversión y claridad.</p>
+          <div class="tcard-foot">
+            <span class="avatars"><span class="av av-1"></span><span class="av av-2"></span><span class="av av-3"></span></span>
+            <span class="meta"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-comment"/></svg>3</span>
+            <span class="meta"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-calendar"/></svg>24 May</span>
+            <button class="icon-btn spacer"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-kebab"/></svg></button>
+          </div>
+        </article>
+      </div>
+
+      <!-- Tags -->
+      <div class="col-pad">
+        <p class="eyebrow">Tags</p>
+        <div class="tag-list">
+          <span class="tag tag--trabajo">Trabajo</span>
+          <span class="tag tag--personal">Personal</span>
+          <span class="tag tag--estudio">Estudio</span>
+          <span class="tag tag--urgente">Urgente</span>
+          <span class="tag tag--baja">Baja prioridad</span>
+        </div>
+      </div>
+
+      <!-- Badges -->
+      <div class="col-pad">
+        <p class="eyebrow">Badges</p>
+        <div class="badge-list">
+          <div class="badge-row"><span class="badge-num b-accent">8</span><span class="badge-label">Hoy</span></div>
+          <div class="badge-row"><span class="badge-num b-info">3</span><span class="badge-label">Esta semana</span></div>
+          <div class="badge-row"><span class="badge-num b-success">12</span><span class="badge-label">Completadas</span></div>
+          <div class="badge-row"><span class="badge-num b-error">2</span><span class="badge-label">Atrasadas</span></div>
+        </div>
+      </div>
+
+      <!-- Progress -->
+      <div class="col-pad">
+        <p class="eyebrow">Progress</p>
+        <div class="progress-block">
+          <div class="progress-head"><span class="lbl">Progreso general</span></div>
+          <div class="progress-head" style="margin-top:-6px"><span class="pct" style="font-size:15px">68%</span></div>
+          <div class="track"><div class="fill" style="width:68%"></div></div>
+          <div class="progress-mini">
+            <div class="progress-mini-row"><div class="mrow"><span class="l">Diseño</span><span class="v">80%</span></div><div class="track thin"><div class="fill" style="width:80%"></div></div></div>
+            <div class="progress-mini-row"><div class="mrow"><span class="l">Desarrollo</span><span class="v">60%</span></div><div class="track thin"><div class="fill" style="width:60%"></div></div></div>
+            <div class="progress-mini-row"><div class="mrow"><span class="l">Testing</span><span class="v">40%</span></div><div class="track thin"><div class="fill" style="width:40%"></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW: Navigation | Vista de ejemplo -->
+    <div class="row split divide-x" style="grid-template-columns:300px 1fr">
+      <!-- Navigation -->
+      <div class="col-pad">
+        <p class="eyebrow">Navegación</p>
+        <nav class="nav-mock">
+          <div class="nav-brand">
+            <span class="nav-logo"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-orbit"/></svg></span>
+            <span class="name">Orbit</span>
+          </div>
+          <div class="nav-items" id="navItems">
+            <button class="nav-item active"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-orbit"/></svg>Current Orbit</button>
+            <button class="nav-item"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-tasks"/></svg>Tasks</button>
+            <button class="nav-item"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-folder"/></svg>Projects</button>
+            <button class="nav-item"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-calendar"/></svg>Calendar</button>
+            <button class="nav-item"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-layers"/></svg>Event Queue</button>
+            <button class="nav-item"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-trend"/></svg>Analytics</button>
+          </div>
+          <div class="nav-spacer"></div>
+          <div class="nav-foot">
+            <button class="nav-item"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-settings"/></svg>Settings</button>
+            <button class="nav-item"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-chev-left"/></svg>Collapse</button>
+          </div>
+        </nav>
+      </div>
+
+      <!-- Vista de ejemplo -->
+      <div class="col-pad">
+        <p class="eyebrow">Vista de ejemplo</p>
+        <div class="example-grid" style="margin-top:var(--s-24)">
+          <!-- Focus card -->
+          <div class="focus-card">
+            <h4>Current Orbit</h4>
+            <p class="sub">Tu enfoque actual</p>
+            <div class="orbit">
+              <svg viewBox="0 0 188 188">
+                <circle cx="94" cy="94" r="78" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+                <circle cx="94" cy="94" r="58" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+                <circle cx="94" cy="94" r="78" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-dasharray="160 330" transform="rotate(-90 94 94)"/>
+                <circle class="orbit-dot" cx="172" cy="94" r="3.5" transform="rotate(35 94 94)"/>
+                <circle cx="36" cy="94" r="2.5" fill="rgba(165,180,252,0.8)" transform="rotate(-20 94 94)"/>
+              </svg>
+              <div class="orbit-center"><span class="n">12</span><span class="t">tareas activas</span></div>
+            </div>
+            <div class="weekstrip">
+              <div class="wd"><div class="dow">L</div><div class="dnum">19</div></div>
+              <div class="wd"><div class="dow">M</div><div class="dnum">20</div></div>
+              <div class="wd"><div class="dow">M</div><div class="dnum">21</div></div>
+              <div class="wd today"><div class="dow">J</div><div class="dnum">22</div></div>
+              <div class="wd"><div class="dow">V</div><div class="dnum">23</div></div>
+              <div class="wd"><div class="dow">S</div><div class="dnum">24</div></div>
+              <div class="wd"><div class="dow">D</div><div class="dnum">25</div></div>
+            </div>
+          </div>
+
+          <!-- Main panel -->
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <h4>Hoy, 22 de mayo</h4>
+                <p class="sub">Concéntrate en lo que te acerca a tus objetivos.</p>
+              </div>
+              <button class="btn-pill"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-plus"/></svg>Nueva tarea</button>
+            </div>
+
+            <div class="tasklist" id="exampleTasks">
+              <div class="task-item"><span class="mini-check"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><use href="#i-check"/></svg></span><span class="tt">Rediseñar flujo de onboarding</span><span class="tag tag--trabajo">Trabajo</span><span class="when hoy"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-clock"/></svg>Hoy</span></div>
+              <div class="task-item"><span class="mini-check"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><use href="#i-check"/></svg></span><span class="tt">Reunión con el equipo de producto</span><span class="tag tag--trabajo">Trabajo</span><span class="when hoy"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-clock"/></svg>Hoy</span></div>
+              <div class="task-item"><span class="mini-check"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><use href="#i-check"/></svg></span><span class="tt">Investigar nuevas librerías de charts</span><span class="tag tag--estudio">Estudio</span><span class="when">Mañana</span></div>
+              <div class="task-item"><span class="mini-check"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><use href="#i-check"/></svg></span><span class="tt">Preparar presentación Q2</span><span class="tag tag--trabajo">Trabajo</span><span class="when">24 May</span></div>
+              <div class="task-item"><span class="mini-check"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><use href="#i-check"/></svg></span><span class="tt">Revisar métricas de adquisición</span><span class="tag tag--personal">Personal</span><span class="when">24 May</span></div>
+              <button class="task-add"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-plus"/></svg>Añadir tarea</button>
+            </div>
+
+            <h5 class="events-head">Próximos eventos</h5>
+            <div class="events-grid">
+              <div class="event-card">
+                <span class="event-ico"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-calendar"/></svg></span>
+                <div><p class="et">Reunión de planificación</p><p class="em">Equipo de producto<br>Mañana, 10:00</p></div>
+              </div>
+              <div class="event-card">
+                <span class="event-ico"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-calendar"/></svg></span>
+                <div><p class="et">Entrega de reporte mensual</p><p class="em">Viernes, 24 May</p></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-note">
+      <span>Event Horizon · Design System v1.0</span>
+      <span>Toca cualquier color para copiar su valor · componentes totalmente interactivos</span>
+    </div>
+
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  // ---- Spacing scale (generative) ----
+  var spacing = [4, 8, 12, 16, 24, 32, 40, 48, 64];
+  var sRow = document.getElementById('spacingRow');
+  spacing.forEach(function (v) {
+    var item = document.createElement('div');
+    item.className = 'spacing-item';
+    item.innerHTML = '<div class="spacing-box" style="width:' + v + 'px;height:' + v + 'px"></div><span class="spacing-cap">' + v + '</span>';
+    sRow.appendChild(item);
+  });
+
+  // ---- Radii scale (generative) ----
+  var radii = [2, 4, 8, 12, 16, 24];
+  var rRow = document.getElementById('radiiRow');
+  radii.forEach(function (v) {
+    var item = document.createElement('div');
+    item.className = 'radii-item';
+    item.innerHTML = '<div class="radii-box" style="border-radius:' + v + 'px"></div><span class="spacing-cap">' + v + 'px</span>';
+    rRow.appendChild(item);
+  });
+
+  // ---- Copy color to clipboard ----
+  var toast = document.getElementById('toast');
+  var toastTimer;
+  function showToast(html) {
+    toast.innerHTML = html;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toast.classList.remove('show'); }, 1600);
+  }
+  document.getElementById('colorList').addEventListener('click', function (e) {
+    var row = e.target.closest('.color-row');
+    if (!row) return;
+    var hex = row.getAttribute('data-hex');
+    var done = function () { showToast('Copiado <b>' + hex + '</b>'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(hex).then(done).catch(done);
+    } else { done(); }
+  });
+
+  // ---- Nav active switching ----
+  var navItems = document.getElementById('navItems');
+  navItems.addEventListener('click', function (e) {
+    var item = e.target.closest('.nav-item');
+    if (!item) return;
+    navItems.querySelectorAll('.nav-item').forEach(function (n) { n.classList.remove('active'); });
+    item.classList.add('active');
+  });
+
+  // ---- Example task checkboxes ----
+  document.getElementById('exampleTasks').addEventListener('click', function (e) {
+    var check = e.target.closest('.mini-check');
+    if (!check) return;
+    check.classList.toggle('checked');
+    var tt = check.parentElement.querySelector('.tt');
+    if (tt) tt.classList.toggle('done', check.classList.contains('checked'));
+  });
+})();
+</script>
+</body>
+</html>
